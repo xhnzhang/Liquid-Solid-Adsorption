@@ -1,0 +1,22 @@
+#!/bin/bash
+#PBS -N p5
+#PBS -q workq
+#PBS -l select=1:ncpus=24:mem=60gb,walltime=72:00:00
+#PBS -j oe
+######################### manu input starts #############################
+#runtime="200ns"
+file_name="O_COM.out"
+#file_name2="COM_COM.out"
+#file_name3="C_COM.out"
+######################### manu input ends #############################
+module purge
+module add anaconda3/4.2.0
+
+echo "START-------------------------"
+qstat -xf $PBS_JOBID
+
+cd $PBS_O_WORKDIR
+
+python 1_gen_layer.py  ${file_name} # ${file_name2} ${file_name3}
+
+rm -f core.*

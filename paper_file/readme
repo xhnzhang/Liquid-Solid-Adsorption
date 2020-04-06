@@ -1,0 +1,5 @@
+-- These files are results of the 1st out of the total 10 simulations 
+   from the paper that are generated after step2: 2_analyze_data
+
+-- These files can be used with 3_plot_fit.ipynb to get hopping event,
+   rate constant and RSDF fitting.

@@ -1,0 +1,188 @@
+# Water production run, nvt
+# Xiaohong Zhang
+# Getman Group
+# 27 Jun 2017
+units           	real
+boundary        	p p p
+
+#### change variable value as needed in your own system ####
+variable			name string ch3oh
+variable			temp equal 300.0
+variable			press equal 1.0
+variable			tcoupl equal 100.0
+variable			pcoupl equal 5000.0
+variable			dumpFreq equal 1000000.0	
+variable			thermFreq equal 1000000.0	
+variable			runStep	equal 200000000
+
+
+log             	log.${name}
+atom_style      	full
+bond_style      	harmonic
+angle_style     	harmonic
+dihedral_style  	opls
+special_bonds   	lj/coul 0.0 0.0 0.5
+
+
+#read_data       	data.${name}
+# restart         	10000 restart.${name}.*
+read_restart  	restart.${name}.*
+
+group           	water type 1 2
+group           	slab type 7
+group              	still type 3 4 5 6 7
+group			Ow type 2
+group			O type 6
+group 			ads type 3 4 5 6
+group			diffusion type 1 2 3 4 5 6 
+group			C type 5
+
+pair_style      	lj/cut/coul/long 10.0
+#pair_modify		tail yes  # Do not use this for small cell
+kspace_style		pppm 1.0e-4
+
+pair_coeff    1    1      0.0460  0.4000    # Hw-Hw   TIP3P epsilon sigma
+pair_coeff    1    2      0.0836  1.7753    # Hw-Ow   TIP3P
+pair_coeff    1    3      0.0000  0.0000 	# Hw-H_h  OPLS geometric
+pair_coeff    1    4      0.0371  1.0000 	# Hw-H_c  OPLS geometric
+pair_coeff    1    5      0.0551	1.1832 	# Hw-C    OPLS geometric
+pair_coeff    1    6      0.0884	1.1171 	# Hw-Oc   OPLS geometric
+pair_coeff    1    7      0.0607  1.0496    # Hw-Pt   OPLS geometric
+
+pair_coeff    2    2      0.1521	3.1507    # Ow-Ow   TIP3P
+pair_coeff    2    3      0.0000	0.0000    # Ow-H_h  OPLS geometric
+pair_coeff    2    4      0.0675	2.8066    # Ow-H_c  OPLS geometric 
+pair_coeff    2    5      0.1002	3.3208    # Ow-C    OPLS geometric
+pair_coeff    2    6      0.1608	3.1353    # Ow-O    OPLS geometric
+pair_coeff    2    7      0.1103	2.9457    # Hw-Pt   OPLS geometric
+
+pair_coeff    3    3      0.0000	0.0000    # Hh_Hh   OPLS geometric
+pair_coeff    3    4      0.0000	0.0000    # Hh_Hc   OPLS geometric
+pair_coeff    3    5      0.0000	0.0000    # Hh_C    OPLS geometric
+pair_coeff    3    6      0.0000	0.0000    # Hh_Oc   OPLS geometric
+pair_coeff    3    7      0.0000	0.0000    # Hh_Pt   OPLS geometric
+
+pair_coeff    4    4      0.0300	2.5000    # Hc_Hc   OPLS geometric
+pair_coeff    4    5      0.0445	2.9580    # Hc_C    OPLS geometric
+pair_coeff    4    6      0.0714	2.7928    # Hc_Oc   OPLS geometric
+pair_coeff    4    7      0.0490	2.6239    # Hc_Pt   OPLS geometric
+
+pair_coeff    5    5      0.0660	3.5000    # C _C    OPLS geometric
+pair_coeff    5    6      0.1059	3.3045    # C _Oc   OPLS geometric
+pair_coeff    5    7      0.0727	3.1047    # C _Pt   OPLS geometric
+
+pair_coeff    6    6      0.1700	3.1200    # Oc_Oc   OPLS geometric
+pair_coeff    6    7      0.1166	2.9313    # Oc_Pt   OPLS geometric
+
+pair_coeff    7    7      0.0800  2.7540    # Pt_Pt   OPLS geometric
+
+
+neighbor			2.0 bin
+neigh_modify		delay 1 every 1 check yes 
+thermo 				${thermFreq}
+
+fix             	fixSlab slab setforce 0.0 0.0 0.0
+
+
+print "------------ beginning minimization ------------"
+thermo_style 		custom step temp fmax fnorm etotal lx ly lz 
+minimize 			1.0e-8  1.0e-10 100000 100000 
+
+#write_data 			data.${name}.min
+
+
+
+print "------------ beginning equilibration (const Vol)------------"
+reset_timestep 		0
+timestep        	1
+
+velocity        	diffusion create ${temp} 1037409 rot yes dist gaussian
+velocity        	slab set 0.0 0.0 0.0
+
+fix             	1 diffusion nve 
+fix			2 diffusion temp/csvr ${temp} ${temp} ${tcoupl} 52364
+#dump            1 all atom ${dumpFreq} dump.${name}_eq.lammpstrj
+#dump_modify     1 sort id
+
+thermo_style 		custom step temp pe etotal press vol lz
+
+run		2000000 # modify as needed
+
+#write_data          data.${name}_eq
+#write_restart       rst.${name}_eq
+
+
+print "------------ check energy conservation (only nve)------------"
+reset_timestep 		0
+unfix				2
+#undump	1
+
+#dump	1	all atom ${dumpFreq} dump.${name}_nve.lammpstrj
+
+run		500000 # modify as needed
+
+#write_data          data.${name}_nve
+#write_restart       rst.${name}_nve
+
+
+print "------------ beginning nvt ----------------------------------"
+reset_timestep 	0
+timestep        1.0
+unfix		1
+
+
+fix             1 diffusion nvt temp ${temp} ${temp} ${tcoupl} 
+
+#compute 4 ads com
+#fix     4 ads ave/time 10 1 10 c_4[*] file COM_COM.out mode vector # use mode vector if output 3 dims
+
+compute 5 O com
+fix	5 O ave/time 10 1 10 c_5[*] file O_COM.out mode vector #works, if output all dims, use  mode vector
+
+#compute 6 C com
+#fix     6 C ave/time 10 1 10 c_6[*] file C_COM.out mode vector
+
+thermo_style 	custom step temp  press etotal 
+
+
+####### dump MD trajectory ########
+#undump	1
+dump 		1 all atom ${dumpFreq} dump.${name}_prod.lammpstrj
+dump_modify	1 sort id
+
+run		${runStep}
+
+#write_data          data.${name}_prod
+#write_restart       rst.${name}_prod
+
+
+#rerun				dump.${name}_prod.lammpstrj first 0 every 1000 last ${runStep} dump x y z box yes scaled yes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

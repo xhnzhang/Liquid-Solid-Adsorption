@@ -1,0 +1,39 @@
+*******************************************************************************
+Xiaohong Zhang
+Getman Research Group
+*******************************************************************************
+
+0. Run LAMMPS to get O_COM.out file
+
+
+1. Run 1_gen_layer.py and subGenLayer.pbs on Palmetto to generate a 
+   folder corresponding to O_COM.out file: O_results/
+   $ qsub subGenLayer.pbs
+
+   -- Note: if run on local computer, put both 1_gen_layer.py and 
+         O_COM.out in the same folder, do
+         $ python 1_gen_layer.py O_COM.out 
+   
+   -- Output: inside O_results/ folder, 4 files are generated:
+      decLayer.dat, decCount.dat, intLayer.dat, intCount.dat
+
+
+2. Go to O_results/ folder, put 2_analyze_data.py and subDataAnalysis.pbs
+   to this folder and do
+   $ qsub subDataAnalysis.pbs
+
+   -- Note: if run on local computer, do
+      $ python 2_analyze_data.py
+
+   -- Output: inside O_results/ folder, 4 files are generated:
+      resTimeSepDist.csv, resTimeDist.csv, hopEventDict.csv, rateConstDict.csv
+
+3. Put 3_plot_fit.ipynb into O_results/ folder, open this file on Jupyter Notebook,
+   and excute the scripts.
+
+
+
+*******************************************************************************
+-- If only want to test the RSDF fitting, check folder paper_file/. The data in
+   this folder is used for step 3 to plot RSDF, etc.
+*******************************************************************************

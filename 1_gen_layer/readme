@@ -1,0 +1,6 @@
+-- put 1_gen_layer.py and O_COM.out in the same folder
+
+-- if run python script on Palmetto cluster, just submit .pbs 
+
+-- if run on local computer, just type following on command line:
+   1_gen_layer.py O_COM.out 
