@@ -1,4 +1,4 @@
--- put input.prod, data.ch3oh, lammps.31Mar17.pbs in the same folder on Palmetto, run LAMMPS.
+-- put input.prod, restart.ch3oh.1000 (this is the restart data file), lammps.31Mar17.pbs in the same folder on Palmetto, run LAMMPS.
 
 -- After LAMMPS simulation is finished,
    O_COM.out file is generated
